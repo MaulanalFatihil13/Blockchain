@@ -11,7 +11,7 @@ class Blockchain:
     def __init__(self):
         self.chain = []
         # genesis block
-        self.create_block(proof = 1, prev_hash = '0')
+        self.create_block(proof=1, prev_hash='0')
 
     def create_block(self, proof, prev_hash, proof_of_work=None, data=None):
         block = {
@@ -39,15 +39,15 @@ class Blockchain:
             else:
                 new_proof += 1
         return new_proof, hash_operation
-    
+
     def get_hash(self, block):
         hash_operation = hashlib.sha256(json.dumps(block).encode()).hexdigest()
         return hash_operation
-    
+
     def is_chain_valid(self):
         prev_block = self.chain[0]
         now_index = 1
-        while counter < len(self.chain) + 1:
+        while now_index < len(self.chain):
             now_block = self.chain[now_index]
 
             # 1. cek apakah hash now block = prev hash 
@@ -66,16 +66,20 @@ class Blockchain:
             now_index += 1
         return True
 
-    def modify_block(self):
-        pass
-
+    def modify_block(self, block_index, new_data):
+        if block_index < len(self.chain):
+            modified_block = self.chain[block_index]
+            modified_block['data'] = new_data
+            modified_block['hash'] = self.get_hash(modified_block)
+            return True
+        return False
 
 # 2. Web Aplikasi untuk Testing
 app = Flask(__name__)
 
 blockchain = Blockchain()
 
-# buat endpoint 
+# Buat endpoint
 @app.route("/get_chain", methods=['GET'])
 def get_chain():
     response = {
@@ -87,13 +91,13 @@ def get_chain():
 @app.route("/mining", methods=['GET'])
 def mining():
     prev_block = blockchain.get_last_block()
-    # get prev proof 
+    # get prev proof
     prev_proof = prev_block['proof']
-    proof, proof_of_work = blockchain.proof_of_work(prev_proof) 
-    # get prev hash 
+    proof, proof_of_work = blockchain.proof_of_work(prev_proof)
+    # get prev hash
     prev_hash = blockchain.get_hash(prev_block)
     # prev_hash = prev_block['hash']
-    # create block 
+    # create block
     created_block = blockchain.create_block(proof, prev_hash, proof_of_work)
     response = {
         'message': "Blockchain is successfully created",
@@ -101,18 +105,17 @@ def mining():
     }
     return jsonify(response), 200
 
-
 @app.route("/create", methods=['POST'])
 def create_block():
     data = request.form
 
     prev_block = blockchain.get_last_block()
-    # get prev proof 
+    # get prev proof
     prev_proof = prev_block['proof']
-    proof, proof_of_work = blockchain.proof_of_work(prev_proof) 
-    # get prev hash 
+    proof, proof_of_work = blockchain.proof_of_work(prev_proof)
+    # get prev hash
     prev_hash = blockchain.get_hash(prev_block)
-    # create block 
+    # create block
     created_block = blockchain.create_block(proof, prev_hash, proof_of_work, data['data'])
     response = {
         'message': "Blockchain is successfully created",
@@ -120,13 +123,22 @@ def create_block():
     }
     return jsonify(response), 200
 
-    
+@app.route("/modify_block", methods=['POST'])
+def modify_block():
+    data = request.form
+    block_index = int(data['block_index'])
+    new_data = data['new_data']
 
+    if blockchain.modify_block(block_index, new_data):
+        response = {
+            'message': f"Block {block_index} has been modified",
+            'new_block_data': new_data
+        }
+        return jsonify(response), 200
+    else:
+        response = {
+            'message': f"Block {block_index} not found or cannot be modified"
+        }
+        return jsonify(response), 404
 
 app.run()
-
-# Tugas 
-# 1. Buatkan endpoint yang mengecek apakah chainnya valid
-# 2. Simpan hash block didalam blocknya
-# 3. Tambah data diddalam block
-# 4. Fungsi dan endpoint yang mensimulasikan adanya modifikasi didalam block, sehingga chainnya tidak valid
