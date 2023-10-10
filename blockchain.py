@@ -124,26 +124,16 @@ def mine():
     }
     return jsonify(response), 200
 
-@app.route("/modify_block/<int:block_id>", methods=['POST'])
-def modify_block(block_id):
-    data = request.form.get('data')
-    
-    if data is not None:
-        if blockchain.modify_block(block_id, data):
-            response = {
-                'message': f"Block {block_id} has been modified",
-                'new_block_data': data
-            }
-            return jsonify(response), 200
-        else:
-            response = {
-                'message': f"Block {block_id} not found or cannot be modified"
-            }
-            return jsonify(response), 404
+@app.route("/modify_block", methods=["PUT"])
+def modify_block():
+    # Simulate modifying the last block in the chain
+    if len(blockchain.chain) > 1:
+        modified_data = "Modified Data"
+        blockchain.chain[-1].data = modified_data
+        response = {"message": "Block modified successfully"}
+        return jsonify(response), 200
     else:
-        response = {
-            'message': "Please provide data to modify the block"
-        }
+        response = {"message": "Cannot modify the genesis block"}
         return jsonify(response), 400
 
 def modify_block(self, block_id, new_data):
